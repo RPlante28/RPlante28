@@ -54,8 +54,9 @@ async function gather() {
     }));
     const d = { repos: 7, stars: 0, followers: 8, weekCommits: 11,
       langs: [['HTML', 31], ['TypeScript', 26], ['Java', 16], ['CSS', 15], ['JavaScript', 6]],
-      year: { commits: 512, prs: 14, issues: 6, reviews: 3, total: 640, weeks } };
-    d.rank = calcRank(d);
+      year: { commits: 512, prs: 14, issues: 6, reviews: 3, total: 640, weeks },
+      allTime: { commits: 1240, prs: 52, issues: 18, reviews: 9 } };
+    d.rank = calcRank({ ...d.allTime, stars: d.stars, followers: d.followers });
     return d;
   }
   const user = await api(`/users/${USER}`);
@@ -82,25 +83,37 @@ async function gather() {
     year = { commits: c.totalCommitContributions, prs: c.totalPullRequestContributions, issues: c.totalIssueContributions, reviews: c.totalPullRequestReviewContributions, total: c.contributionCalendar.totalContributions, weeks: c.contributionCalendar.weeks };
   } catch { /* leave empty */ }
 
-  const d = { repos: user.public_repos, stars, followers: user.followers, weekCommits, langs, year };
-  d.rank = calcRank(d);
+  // all-time totals (commits via search API, PRs/issues via GraphQL)
+  const allTime = { commits: year.commits, prs: 0, issues: 0, reviews: year.reviews };
+  try {
+    const t = await graphql(`query($l:String!){user(login:$l){pullRequests{totalCount} issues{totalCount}}}`, { l: USER });
+    allTime.prs = t.user.pullRequests.totalCount;
+    allTime.issues = t.user.issues.totalCount;
+  } catch { /* keep defaults */ }
+  try {
+    const sr = await fetch(`https://api.github.com/search/commits?q=author:${USER}&per_page=1`, { headers: { ...headers, Accept: 'application/vnd.github.cloak-preview+json' } });
+    if (sr.ok) { const j = await sr.json(); if (typeof j.total_count === 'number' && j.total_count > 0) allTime.commits = j.total_count; }
+  } catch { /* keep year commits */ }
+
+  const d = { repos: user.public_repos, stars, followers: user.followers, weekCommits, langs, year, allTime };
+  d.rank = calcRank({ ...allTime, stars: d.stars, followers: d.followers });
   return d;
 }
 
 // github-readme-stats rank algorithm (percentile -> letter)
-function calcRank(d) {
-  const expcdf = (x) => 1 - Math.pow(2, -x);
-  const lncdf = (x) => x / (1 + x);
+function calcRank(x) {
+  const expcdf = (v) => 1 - Math.pow(2, -v);
+  const lncdf = (v) => v / (1 + v);
   const W = { commits: 2, prs: 3, issues: 1, reviews: 1, stars: 4, followers: 1 };
-  const M = { commits: 250, prs: 50, issues: 25, reviews: 2, stars: 50, followers: 10 };
+  const M = { commits: 1000, prs: 50, issues: 25, reviews: 2, stars: 50, followers: 10 };
   const total = Object.values(W).reduce((a, b) => a + b, 0);
   const rank = 1 - (
-    W.commits * expcdf((d.year.commits || 0) / M.commits) +
-    W.prs * expcdf((d.year.prs || 0) / M.prs) +
-    W.issues * expcdf((d.year.issues || 0) / M.issues) +
-    W.reviews * expcdf((d.year.reviews || 0) / M.reviews) +
-    W.stars * lncdf((d.stars || 0) / M.stars) +
-    W.followers * lncdf((d.followers || 0) / M.followers)
+    W.commits * expcdf((x.commits || 0) / M.commits) +
+    W.prs * expcdf((x.prs || 0) / M.prs) +
+    W.issues * expcdf((x.issues || 0) / M.issues) +
+    W.reviews * expcdf((x.reviews || 0) / M.reviews) +
+    W.stars * lncdf((x.stars || 0) / M.stars) +
+    W.followers * lncdf((x.followers || 0) / M.followers)
   ) / total;
   const pct = rank * 100;
   const TH = [1, 12.5, 25, 37.5, 50, 62.5, 75, 87.5, 100];
@@ -145,9 +158,9 @@ function svgRank(d) {
   const frac = Math.max(0.03, Math.min(1, (100 - percentile) / 100));
   const dash = `${(C * frac).toFixed(1)} ${(C * (1 - frac)).toFixed(1)}`;
   const rows = [
-    ['CONTRIBUTIONS 1Y', d.year.total || 0],
-    ['COMMITS 1Y', d.year.commits || 0],
-    ['PULL REQUESTS', d.year.prs || 0],
+    ['COMMITS', d.allTime.commits || 0],
+    ['PULL REQUESTS', d.allTime.prs || 0],
+    ['ISSUES', d.allTime.issues || 0],
     ['STARS', d.stars || 0],
   ];
   const stats = rows.map((row, i) => {
