@@ -24,3 +24,11 @@ software / infrastructure intern.
 Python, TypeScript, JavaScript, Java, C, SQL &nbsp;·&nbsp; Flask, Node.js,
 PostgreSQL / PostGIS, Linux, Git, Tableau &nbsp;·&nbsp; Machine Learning,
 OpenCV, MapLibre GL, NetworkX, LangChain
+
+### Stats
+
+<!--STATS_START-->
+```text
+Stats refresh automatically each week via a GitHub Action.
+```
+<!--STATS_END-->
