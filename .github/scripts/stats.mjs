@@ -56,34 +56,42 @@ async function gather() {
 }
 
 function svg(d) {
-  const W = 460, H = 150, x0 = 24, barW = W - x0 * 2, barY = 84, barH = 12;
-  const langs = d.langs.slice(0, 6);
+  const W = 420, H = 112;
+  const BLUE = '#0000a8', CYAN = '#54fcfc', YEL = '#fcfc54', INK = '#d4d8dc', MUT = '#9fc0f0';
+  const langs = d.langs.slice(0, 5);
   const sum = langs.reduce((a, [, p]) => a + p, 0) || 1;
-  let cx = x0;
+  const bx = 22, bw = W - 44, by = 62, bh = 12;
+  let cx = bx;
   const segs = langs
     .map(([n, p]) => {
-      const w = (barW * p) / sum;
-      const rect = `<rect x="${cx.toFixed(1)}" y="${barY}" width="${(w + 0.4).toFixed(1)}" height="${barH}" fill="${colorFor(n)}"/>`;
+      const w = (bw * p) / sum;
+      const r = `<rect x="${cx.toFixed(1)}" y="${by}" width="${(w + 0.4).toFixed(1)}" height="${bh}" fill="${colorFor(n)}"/>`;
       cx += w;
-      return rect;
+      return r;
     })
     .join('');
+  let lx = bx;
   const legend = langs
-    .map(([n, p], i) => {
-      const lx = x0 + (i % 3) * 138;
-      const ly = 118 + Math.floor(i / 3) * 20;
-      return `<circle cx="${lx + 4}" cy="${ly - 4}" r="4" fill="${colorFor(n)}"/>` +
-        `<text x="${lx + 14}" y="${ly}" fill="#9fb3d1" font-size="12">${esc(n)} ${p}%</text>`;
+    .map(([n]) => {
+      const label = n.toUpperCase();
+      const item = `<rect x="${lx}" y="86" width="8" height="8" fill="${colorFor(n)}"/>` +
+        `<text x="${lx + 12}" y="93" fill="${MUT}" font-size="10">${esc(label)}</text>`;
+      lx += 12 + label.length * 6.1 + 10;
+      return item;
     })
     .join('');
+  const title = ` ${USER.toUpperCase()} @ GITHUB `;
+  const tw = title.length * 7;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${USER} GitHub stats">
   <style>text{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace}</style>
-  <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="10" fill="#0d1b2a" stroke="#22304a"/>
-  <text x="${x0}" y="34" fill="#5aa0ff" font-size="15" font-weight="700">${USER.toLowerCase()} @ github</text>
-  <text x="${x0}" y="58" fill="#c9d6e6" font-size="13">${d.repos} repositories &#183; ${d.followers} followers</text>
-  <text x="${x0}" y="${barY - 8}" fill="#6f8bb0" font-size="11" letter-spacing="0.06em">LANGUAGE MIX</text>
-  <clipPath id="r"><rect x="${x0}" y="${barY}" width="${barW}" height="${barH}" rx="6"/></clipPath>
-  <g clip-path="url(#r)">${segs}</g>
+  <rect x="6.5" y="14.5" width="${W - 13}" height="${H - 21}" fill="${BLUE}" stroke="${CYAN}"/>
+  <rect x="9.5" y="17.5" width="${W - 19}" height="${H - 27}" fill="none" stroke="${CYAN}" stroke-opacity="0.35"/>
+  <rect x="${(W - tw) / 2}" y="10" width="${tw}" height="10" fill="${BLUE}"/>
+  <text x="${W / 2}" y="19" fill="${CYAN}" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle">${esc(title.trim())}</text>
+  <text x="22" y="42" fill="${INK}" font-size="12">${d.repos} REPOS &#160;&#160; ${d.followers} FOLLOWERS</text>
+  <text x="22" y="57" fill="${YEL}" font-size="10" letter-spacing="1">LANGUAGE MIX</text>
+  <rect x="${bx - 1}" y="${by - 1}" width="${bw + 2}" height="${bh + 2}" fill="none" stroke="${CYAN}" stroke-opacity="0.6"/>
+  <g>${segs}</g>
   ${legend}
 </svg>`;
 }
