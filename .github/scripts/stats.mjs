@@ -1,6 +1,6 @@
-// Generates a minimal, colored, terminal-style GitHub stats card as an SVG
-// (stats.svg) and points the README at it. Runs in GitHub Actions (full API
-// access via GH_TOKEN); no third-party service involved.
+// Generates a minimal, DOS-styled (Norton Commander) SVG stats card and points
+// the README at it. Runs in GitHub Actions (full API access via GH_TOKEN); no
+// third-party service involved.
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const USER = process.env.GH_USER || 'RPlante28';
@@ -14,6 +14,17 @@ const api = async (p) => {
   const r = await fetch(`https://api.github.com${p}`, { headers });
   if (!r.ok) throw new Error(`${p} -> ${r.status}`);
   return r.json();
+};
+const graphql = async (query, variables) => {
+  const r = await fetch('https://api.github.com/graphql', {
+    method: 'POST',
+    headers: { ...headers, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables }),
+  });
+  if (!r.ok) throw new Error(`graphql -> ${r.status}`);
+  const j = await r.json();
+  if (j.errors) throw new Error(JSON.stringify(j.errors));
+  return j.data;
 };
 
 // GitHub linguist colors (fallback slate).
@@ -29,7 +40,7 @@ const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 
 async function gather() {
   if (process.env.MOCK === '1') {
-    return { repos: 7, followers: 8, langs: [['HTML', 31], ['TypeScript', 26], ['Java', 16], ['CSS', 15], ['JavaScript', 6], ['Python', 6]] };
+    return { repos: 7, weekCommits: 23, langs: [['HTML', 31], ['TypeScript', 26], ['Java', 16], ['CSS', 15], ['JavaScript', 6]] };
   }
   const user = await api(`/users/${USER}`);
   let repos = [], page = 1;
@@ -52,7 +63,20 @@ async function gather() {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 6)
     .map(([k, v]) => [k, Math.round((v / total) * 100)]);
-  return { repos: user.public_repos, followers: user.followers, langs };
+
+  // commits in the last 7 days (GitHub's own contribution counting)
+  let weekCommits = null;
+  try {
+    const to = new Date();
+    const from = new Date(Date.now() - 7 * 24 * 3600 * 1000);
+    const data = await graphql(
+      `query($l:String!,$f:DateTime!,$t:DateTime!){user(login:$l){contributionsCollection(from:$f,to:$t){totalCommitContributions}}}`,
+      { l: USER, f: from.toISOString(), t: to.toISOString() }
+    );
+    weekCommits = data.user.contributionsCollection.totalCommitContributions;
+  } catch { weekCommits = null; }
+
+  return { repos: user.public_repos, followers: user.followers, weekCommits, langs };
 }
 
 function svg(d) {
@@ -80,15 +104,16 @@ function svg(d) {
       return item;
     })
     .join('');
-  const title = ` ${USER.toUpperCase()} @ GITHUB `;
-  const tw = title.length * 7;
+  const stat2 = d.weekCommits != null ? `${d.weekCommits} COMMITS / 7D` : `${d.followers} FOLLOWERS`;
+  const title = `${USER.toUpperCase()} @ GITHUB`;
+  const tw = title.length * 7 + 14;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${USER} GitHub stats">
   <style>text{font-family:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace}</style>
   <rect x="6.5" y="14.5" width="${W - 13}" height="${H - 21}" fill="${BLUE}" stroke="${CYAN}"/>
   <rect x="9.5" y="17.5" width="${W - 19}" height="${H - 27}" fill="none" stroke="${CYAN}" stroke-opacity="0.35"/>
   <rect x="${(W - tw) / 2}" y="10" width="${tw}" height="10" fill="${BLUE}"/>
-  <text x="${W / 2}" y="19" fill="${CYAN}" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle">${esc(title.trim())}</text>
-  <text x="22" y="42" fill="${INK}" font-size="12">${d.repos} REPOS &#160;&#160; ${d.followers} FOLLOWERS</text>
+  <text x="${W / 2}" y="19" fill="${CYAN}" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle">${esc(title)}</text>
+  <text x="22" y="42" fill="${INK}" font-size="12">${d.repos} REPOS &#160;&#160; ${stat2}</text>
   <text x="22" y="57" fill="${YEL}" font-size="10" letter-spacing="1">LANGUAGE MIX</text>
   <rect x="${bx - 1}" y="${by - 1}" width="${bw + 2}" height="${bh + 2}" fill="none" stroke="${CYAN}" stroke-opacity="0.6"/>
   <g>${segs}</g>
