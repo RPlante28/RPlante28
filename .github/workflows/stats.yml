@@ -31,6 +31,6 @@ jobs:
         run: |
           git config user.name "Rohan Plante"
           git config user.email "rohan.plante1@marist.edu"
-          git add README.md stats.svg
+          git add README.md stats.svg calendar.svg rank.svg
           git diff --staged --quiet || git commit -m "chore: refresh GitHub stats [skip ci]"
           git push

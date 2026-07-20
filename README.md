@@ -10,6 +10,17 @@ full-stack apps. Open to software and data internships.
 ![RPlante28 GitHub stats](stats.svg)
 <!--STATS_END-->
 
+<details>
+<summary>Contribution timeline and rank</summary>
+
+<br/>
+
+![Contributions calendar](calendar.svg)
+
+![GitHub rank](rank.svg)
+
+</details>
+
 ### Projects
 
 - **[MaristMaps](https://github.com/RPlante28/maristmaps)** &nbsp; Campus navigation with a voice-enabled AI agent and multi-floor indoor routing. Best Overall, Marist Spring 2026 hackathon.
