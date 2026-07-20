@@ -29,6 +29,15 @@ OpenCV, MapLibre GL, NetworkX, LangChain
 
 <!--STATS_START-->
 ```text
-Stats refresh automatically each week via a GitHub Action.
+   .------------------.       rplante28@github
+   |  ROHAN-DOS  5.51 |       ------------------------------
+   |  ::::::::::::::   |      Public repos . 7
+   '------------------'       Total stars .. 0
+   [::::::::::::::::::]       Followers .... 8
+                              Flagship ..... 6502-emulator
+   Rohan Plante               Top language . HTML
+   CS @ Marist University     Languages .... HTML · TypeScript · Java · CSS · JavaScript · Python
+                              Mix .......... ██████ █████ ███ ███ █ █
+                              Updated ...... 2026-07-20
 ```
 <!--STATS_END-->
