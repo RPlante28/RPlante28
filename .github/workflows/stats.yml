@@ -26,6 +26,7 @@ jobs:
         run: node .github/scripts/stats.mjs
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
           GH_USER: RPlante28
       - name: Commit if changed
         run: |

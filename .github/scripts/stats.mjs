@@ -4,7 +4,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 const USER = process.env.GH_USER || 'RPlante28';
-const TOKEN = process.env.GH_TOKEN || '';
+const TOKEN = process.env.STATS_TOKEN || process.env.GH_TOKEN || '';
 const README = process.env.README || 'README.md';
 
 const headers = { Accept: 'application/vnd.github+json', 'User-Agent': USER };
@@ -72,27 +72,36 @@ async function gather() {
   let weekCommits = null;
   try {
     const to = new Date(), from = new Date(Date.now() - 7 * 864e5);
-    const w = await graphql(`query($l:String!,$f:DateTime!,$t:DateTime!){user(login:$l){contributionsCollection(from:$f,to:$t){totalCommitContributions}}}`, { l: USER, f: from.toISOString(), t: to.toISOString() });
-    weekCommits = w.user.contributionsCollection.totalCommitContributions;
+    const w = await graphql(`query($l:String!,$f:DateTime!,$t:DateTime!){user(login:$l){contributionsCollection(from:$f,to:$t){totalCommitContributions restrictedContributionsCount}}}`, { l: USER, f: from.toISOString(), t: to.toISOString() });
+    const wc = w.user.contributionsCollection;
+    weekCommits = wc.totalCommitContributions + wc.restrictedContributionsCount;
   } catch { weekCommits = null; }
 
   let year = { commits: 0, prs: 0, issues: 0, reviews: 0, total: 0, weeks: [] };
   try {
-    const y = await graphql(`query($l:String!){user(login:$l){contributionsCollection{totalCommitContributions totalPullRequestContributions totalIssueContributions totalPullRequestReviewContributions contributionCalendar{totalContributions weeks{contributionDays{contributionCount weekday}}}}}}`, { l: USER });
+    const y = await graphql(`query($l:String!){user(login:$l){contributionsCollection{totalCommitContributions restrictedContributionsCount totalPullRequestContributions totalIssueContributions totalPullRequestReviewContributions contributionCalendar{totalContributions weeks{contributionDays{contributionCount weekday}}}}}}`, { l: USER });
     const c = y.user.contributionsCollection;
-    year = { commits: c.totalCommitContributions, prs: c.totalPullRequestContributions, issues: c.totalIssueContributions, reviews: c.totalPullRequestReviewContributions, total: c.contributionCalendar.totalContributions, weeks: c.contributionCalendar.weeks };
+    year = { commits: c.totalCommitContributions + c.restrictedContributionsCount, prs: c.totalPullRequestContributions, issues: c.totalIssueContributions, reviews: c.totalPullRequestReviewContributions, total: c.contributionCalendar.totalContributions, weeks: c.contributionCalendar.weeks };
   } catch { /* leave empty */ }
 
-  // all-time totals (commits via search API, PRs/issues via GraphQL)
+  // all-time totals: PRs/issues via GraphQL totalCount, commits summed per year
+  // (includes private contributions when a STATS_TOKEN with access is set).
   const allTime = { commits: year.commits, prs: 0, issues: 0, reviews: year.reviews };
   try {
-    const t = await graphql(`query($l:String!){user(login:$l){pullRequests{totalCount} issues{totalCount}}}`, { l: USER });
+    const t = await graphql(`query($l:String!){user(login:$l){createdAt pullRequests{totalCount} issues{totalCount}}}`, { l: USER });
     allTime.prs = t.user.pullRequests.totalCount;
     allTime.issues = t.user.issues.totalCount;
-  } catch { /* keep defaults */ }
-  try {
-    const sr = await fetch(`https://api.github.com/search/commits?q=author:${USER}&per_page=1`, { headers: { ...headers, Accept: 'application/vnd.github.cloak-preview+json' } });
-    if (sr.ok) { const j = await sr.json(); if (typeof j.total_count === 'number' && j.total_count > 0) allTime.commits = j.total_count; }
+    const startY = new Date(t.user.createdAt).getUTCFullYear();
+    const nowY = new Date().getUTCFullYear();
+    let sum = 0, ok = false;
+    for (let yr = startY; yr <= nowY; yr++) {
+      const f = `${yr}-01-01T00:00:00Z`;
+      const to = yr === nowY ? new Date().toISOString() : `${yr}-12-31T23:59:59Z`;
+      const r = await graphql(`query($l:String!,$f:DateTime!,$t:DateTime!){user(login:$l){contributionsCollection(from:$f,to:$t){totalCommitContributions restrictedContributionsCount}}}`, { l: USER, f, t: to });
+      const cc = r.user.contributionsCollection;
+      sum += cc.totalCommitContributions + cc.restrictedContributionsCount; ok = true;
+    }
+    if (ok) allTime.commits = sum;
   } catch { /* keep year commits */ }
 
   const d = { repos: user.public_repos, stars, followers: user.followers, weekCommits, langs, year, allTime };
