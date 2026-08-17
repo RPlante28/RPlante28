@@ -4,7 +4,7 @@
   <rect x="9.5" y="17.5" width="401" height="85" fill="none" stroke="#54fcfc" stroke-opacity="0.35"/>
   <rect x="140" y="10" width="140" height="10" fill="#0000a8"/>
   <text x="210" y="19" fill="#54fcfc" font-size="12" font-weight="700" letter-spacing="1" text-anchor="middle">RPLANTE28 @ GITHUB</text>
-  <text x="22" y="42" fill="#d4d8dc" font-size="12">8 REPOS &#160;&#160; 34 COMMITS / 7D</text>
+  <text x="22" y="42" fill="#d4d8dc" font-size="12">8 REPOS &#160;&#160; 1 COMMITS / 7D</text>
   <text x="22" y="57" fill="#fcfc54" font-size="10" letter-spacing="1">LANGUAGE MIX</text>
   <rect x="21" y="61" width="378" height="14" fill="none" stroke="#54fcfc" stroke-opacity="0.6"/>
   <g><rect x="22.0" y="62" width="266.7" height="12" fill="#f1e05a"/><rect x="288.3" y="62" width="39.6" height="12" fill="#4F5D95"/><rect x="327.5" y="62" width="27.8" height="12" fill="#e34c26"/><rect x="354.9" y="62" width="23.9" height="12" fill="#563d7c"/><rect x="378.4" y="62" width="20.0" height="12" fill="#3178c6"/></g><rect x="22" y="86" width="8" height="8" fill="#f1e05a"/><text x="34" y="93" fill="#9fc0f0" font-size="10">JAVASCRIPT</text><rect x="105" y="86" width="8" height="8" fill="#4F5D95"/><text x="117" y="93" fill="#9fc0f0" font-size="10">PHP</text><rect x="145.3" y="86" width="8" height="8" fill="#e34c26"/><text x="157.3" y="93" fill="#9fc0f0" font-size="10">HTML</text><rect x="191.70000000000002" y="86" width="8" height="8" fill="#563d7c"/><text x="203.70000000000002" y="93" fill="#9fc0f0" font-size="10">CSS</text><rect x="232" y="86" width="8" height="8" fill="#3178c6"/><text x="244" y="93" fill="#9fc0f0" font-size="10">TYPESCRIPT</text>
